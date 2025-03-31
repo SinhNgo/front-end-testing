@@ -22,32 +22,26 @@ type DiscountOptions = {
 export function calculateDiscount(price: number, discountOptions: DiscountOptions = {}): number {
   if (price <= 0) return 0;
 
-  const { customerClass, discountVoucherCode } = discountOptions;
+  const discountRates: Record<CustomerClass, number> = {
+    VIP: 0.1,
+    PREMIUM: 0.05,
+    NORMAL: 0,
+  };
 
-  let discountRate = 0;
-  switch (customerClass) {
-    case 'VIP':
-      discountRate = 0.1; // 10%
-      break;
-    case 'PREMIUM':
-      discountRate = 0.05; // 5%
-      break;
-    case 'NORMAL':
-      discountRate = 0; // 0%
-      break;
-    default:
-      discountRate = 0; // 0%
+  const voucherDiscounts: Record<string, number> = {
+    WELCOME10: 0.1,
+    BLACKFRIDAY: 0.3,
+  };
+
+  const { customerClass = 'NORMAL', discountVoucherCode } = discountOptions;
+
+  let discountRate = discountRates[customerClass] || 0;
+
+  if (discountVoucherCode && voucherDiscounts[discountVoucherCode]) {
+    discountRate += voucherDiscounts[discountVoucherCode];
+  } else if (!discountVoucherCode && price > 2_000_000) {
+    discountRate += 0.05;
   }
 
-  if (discountVoucherCode === 'WELCOME10') {
-    discountRate += 0.1; // 10%
-  } else if (discountVoucherCode === 'BLACKFRIDAY') {
-    discountRate += 0.3; // 30%
-  } else if (!discountVoucherCode && price > 2000000) {
-    discountRate += 0.05; // 5%
-  }
-
-  const discount = price * discountRate;
-
-  return discount > price ? price : discount;
+  return Math.min(price * discountRate, price);
 }
